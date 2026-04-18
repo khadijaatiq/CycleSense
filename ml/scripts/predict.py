@@ -11,6 +11,13 @@ model = joblib.load(MODULE_PATH)
 features = joblib.load(FEATURES_PATH)
 
 def predict_next_cycle(user_history: list) -> dict:
+    if len(user_history) == 0:
+        return {
+            'predicted_days':   28,
+            'confidence_range': 5,
+            'method':           'default - no cycles logged yet',
+            'reliable':         False
+        }
     """Predicts the next menstrual cycle length for a user.
 
     Parameters:
@@ -108,4 +115,31 @@ if __name__ == "__main__":    #example user history for testing
     print(f"   Predicted : {result['predicted_days']} days")
     print(f"   Confidence: ± {result['confidence_range']} days")
     print(f"   Reliable  : {result['reliable']}")
-    print(f"   Method    : {result['method']}")    
+    print(f"   Method    : {result['method']}")  
+
+    print("\nTest 4: User with very irregular cycles")
+    history_irregular = [
+        {'cycle_length': 21, 'stress_level': 5, 'sleep_hours': 4.0, 'exercise_intensity': 1, 'illness_flag': 1},
+        {'cycle_length': 38, 'stress_level': 5, 'sleep_hours': 4.5, 'exercise_intensity': 1, 'illness_flag': 0},
+        {'cycle_length': 24, 'stress_level': 4, 'sleep_hours': 5.0, 'exercise_intensity': 2, 'illness_flag': 1},
+        {'cycle_length': 40, 'stress_level': 5, 'sleep_hours': 4.0, 'exercise_intensity': 1, 'illness_flag': 1},
+    ]
+    result = predict_next_cycle(history_irregular)
+    print(f"   Predicted : {result['predicted_days']} days")
+    print(f"   Confidence: ± {result['confidence_range']} days")
+
+    print("\nTest 5: Single cycle — cold start")
+    history_one = [
+        {'cycle_length': 28, 'stress_level': 3, 'sleep_hours': 7.0, 'exercise_intensity': 2, 'illness_flag': 0},
+    ]
+    result = predict_next_cycle(history_one)
+    print(f"   Predicted : {result['predicted_days']} days")
+    print(f"   Reliable  : {result['reliable']}")
+
+    print("\nTest 6: Empty history — should not crash")
+    try:
+        result = predict_next_cycle([])
+        print(f"   Predicted : {result['predicted_days']} days")
+        print(f"   Reliable  : {result['reliable']}")
+    except Exception as e:
+        print(f"   ERROR: {e}")  
