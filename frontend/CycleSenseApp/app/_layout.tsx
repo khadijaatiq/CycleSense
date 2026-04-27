@@ -32,7 +32,7 @@ export default function RootLayout() {
       
       {/* 3. Individual screens outside of tabs if needed */}
       <Stack.Screen 
-        name="log-cycle" 
+        name="(tabs)/home" 
         options={{ title: 'Log Your Cycle' }} 
       />
     </Stack>
