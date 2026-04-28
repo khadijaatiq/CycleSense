@@ -24,16 +24,21 @@ export default function RootLayout() {
       />
 
       {/* 2. Tabs Group (Main App) */}
-      {/* We hide the Stack header here because (tabs) has its own header */}
       <Stack.Screen
         name="(tabs)"
         options={{ headerShown: false }}
       />
 
-      {/* 3. Individual screens outside of tabs if needed */}
+      {/* 3. Individual screens outside tabs */}
       <Stack.Screen
         name="(tabs)/home"
         options={{ title: 'Log Your Cycle' }}
+      />
+
+      {/* 4. Reset password (pushed from dashboard) */}
+      <Stack.Screen
+        name="(auth)/reset-password"
+        options={{ headerShown: false }}
       />
     </Stack>
   );
