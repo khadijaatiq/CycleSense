@@ -3,22 +3,33 @@ import {
     View, Text, TouchableOpacity,
     StyleSheet, ActivityIndicator, Alert
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getPrediction } from '../../services/api';
+import { useRouter } from 'expo-router';
+import { getPrediction, getCycleHistory } from '../../services/api';
 import { session } from '../../services/session';
 
-function getPredictedDate(daysFromNow: number): string {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+function calculatePredictedDate(startDate: string, days: number): string {
+    if (!startDate) return 'Log a cycle to see date';
+    try {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + days);
+        return date.toLocaleDateString('en-PK', {
+            weekday: 'long',
+            year:    'numeric',
+            month:   'long',
+            day:     'numeric',
+        });
+    } catch {
+        return 'Date unavailable';
+    }
 }
 
 export default function PredictionScreen() {
     const router = useRouter();
     const token = session.getToken();
 
-    const [prediction, setPrediction] = useState<any>(null);
-    const [loading,    setLoading]    = useState(true);
+    const [prediction,    setPrediction]    = useState<any>(null);
+    const [lastCycleDate, setLastCycleDate] = useState('');
+    const [loading,       setLoading]       = useState(true);
 
     useEffect(() => {
         if (token) {
@@ -32,8 +43,19 @@ export default function PredictionScreen() {
     const fetchPrediction = async () => {
         setLoading(true);
         try {
-            const data = await getPrediction(token);
+            // Fetch prediction and cycle history in parallel
+            const [data, historyData] = await Promise.all([
+                getPrediction(token),
+                getCycleHistory(token),
+            ]);
             setPrediction(data);
+
+            // Get the most recent cycle's start date
+            const cycles = historyData?.cycles ?? [];
+            if (cycles.length > 0) {
+                const latest = cycles[cycles.length - 1];
+                setLastCycleDate(latest.cycle_start_date ?? '');
+            }
         } catch (error: any) {
             const msg = error.response?.data?.detail || 'Could not get prediction';
             Alert.alert('Error', msg);
@@ -61,11 +83,15 @@ export default function PredictionScreen() {
                         <Text style={styles.cardLabel}>Next cycle in</Text>
                         <Text style={styles.days}>{prediction.predicted_days}</Text>
                         <Text style={styles.daysLabel}>days</Text>
-                        <Text style={styles.predictedDate}>
-                            📅 {getPredictedDate(prediction.predicted_days)}
-                        </Text>
                         <Text style={styles.confidence}>
                             ± {prediction.confidence_range} days confidence range
+                        </Text>
+
+                        {/* Predicted date */}
+                        <View style={styles.divider} />
+                        <Text style={styles.dateLabel}>Expected on</Text>
+                        <Text style={styles.predictedDate}>
+                            {calculatePredictedDate(lastCycleDate, prediction.predicted_days)}
                         </Text>
                     </View>
 
@@ -107,8 +133,10 @@ const styles = StyleSheet.create({
     cardLabel:    { fontSize: 16, color: '#666', marginBottom: 8 },
     days:         { fontSize: 72, fontWeight: 'bold', color: '#E91E8C' },
     daysLabel:    { fontSize: 20, color: '#E91E8C', marginBottom: 8 },
-    predictedDate: { fontSize: 18, fontWeight: '600', color: '#C2185B', marginBottom: 8 },
+    predictedDate: { fontSize: 18, fontWeight: '600', color: '#E91E8C', textAlign: 'center' },
     confidence:   { fontSize: 14, color: '#999' },
+    divider:       { width: '80%', height: 1, backgroundColor: '#F9C8E0', marginVertical: 16 },
+    dateLabel:     { fontSize: 14, color: '#666', marginBottom: 6 },
     infoBox:      { backgroundColor: '#F9F9F9', borderRadius: 8, padding: 16, marginBottom: 24 },
     infoText:     { fontSize: 14, color: '#555', marginBottom: 4 },
     warning:      { fontSize: 13, color: '#E67E22', marginTop: 8 },

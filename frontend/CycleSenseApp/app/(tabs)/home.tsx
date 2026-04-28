@@ -5,11 +5,14 @@ import {
 } from 'react-native';
 import { logCycle } from '../../services/api';
 import { session } from '../../services/session';
+import { useRouter } from 'expo-router';
 
 export default function LogCycleScreen() {
+    const router = useRouter();
     const token = session.getToken();
     const name  = session.getName();
 
+    const [lastCycleDate, setLastCycleDate] = useState('');
     const [cycleStartDate,    setCycleStartDate]    = useState('');
     const [cycleLength,       setCycleLength]       = useState('');
     const [stressLevel,       setStressLevel]       = useState('');
@@ -40,6 +43,7 @@ export default function LogCycleScreen() {
                 illness_flag:       parseInt(illnessFlag),
             });
             showBanner('Cycle logged! 🌸', 'success');
+            setLastCycleDate(cycleStartDate);
             setCycleStartDate(''); setCycleLength(''); setStressLevel('');
             setSleepHours(''); setExerciseIntensity(''); setIllnessFlag('0');
         } catch (error) {
@@ -101,6 +105,15 @@ export default function LogCycleScreen() {
                     <Text style={styles.buttonText}>Log Cycle</Text>
                   </TouchableOpacity>
             }
+
+            <TouchableOpacity 
+                style={[styles.button, { backgroundColor: '#F48FB1', marginTop: 10 }]} 
+                onPress={() => router.push({ 
+                    pathname: '/(tabs)/prediction', 
+                    params: { token, lastCycleDate: lastCycleDate } 
+                })}>
+                <Text style={styles.buttonText}>View Prediction</Text>
+            </TouchableOpacity>
         </ScrollView>
     );
 }
