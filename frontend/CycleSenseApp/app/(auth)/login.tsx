@@ -7,6 +7,23 @@ import { useRouter } from "expo-router";
 import { loginUser } from "../../services/api";
 import { session } from "../../services/session";
 
+// ── Validation helpers ────────────────────────────────────────────────────
+const isValidEmail    = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const isValidUsername = (v: string) => /^[a-zA-Z0-9_]{3,20}$/.test(v);
+
+const validateIdentifier = (v: string): string => {
+  if (!v) return 'Email or username is required';
+  if (v.includes(' ')) return 'No spaces allowed';
+  if (!isValidEmail(v) && !isValidUsername(v))
+    return 'Enter a valid email or username (3-20 chars, no spaces)';
+  return '';
+};
+
+const validateLoginPassword = (p: string): string => {
+  if (!p) return 'Password is required';
+  return '';
+};
+
 export default function LoginScreen() {
   const router = useRouter();
 
@@ -15,16 +32,32 @@ export default function LoginScreen() {
   const [loading,    setLoading]    = useState(false);
   const [banner,     setBanner]     = useState<{ msg: string; type: "error" | "success" } | null>(null);
 
+  const [errors,  setErrors]  = useState({ identifier: '', password: '' });
+  const [touched, setTouched] = useState({ identifier: false, password: false });
+
   const showBanner = (msg: string, type: "error" | "success") => {
     setBanner({ msg, type });
     setTimeout(() => setBanner(null), 4000);
   };
 
+  const validateAll = () => {
+    const newErrors = {
+      identifier: validateIdentifier(identifier),
+      password:   validateLoginPassword(password),
+    };
+    setErrors(newErrors);
+    setTouched({ identifier: true, password: true });
+    return !newErrors.identifier && !newErrors.password;
+  };
+
+  const handleBlur = (field: 'identifier' | 'password') => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    if (field === 'identifier') setErrors(prev => ({ ...prev, identifier: validateIdentifier(identifier) }));
+    if (field === 'password')   setErrors(prev => ({ ...prev, password:   validateLoginPassword(password) }));
+  };
+
   const handleLogin = async () => {
-    if (!identifier || !password) {
-      showBanner("Please fill in all fields 🌸", "error");
-      return;
-    }
+    if (!validateAll()) return;
 
     setLoading(true);
     setBanner(null);
@@ -67,21 +100,39 @@ export default function LoginScreen() {
         </View>
       )}
 
+      {/* ── Identifier ── */}
       <TextInput
-        style={styles.input}
+        style={[styles.input, touched.identifier && errors.identifier ? styles.inputError : null]}
         placeholder="Email or Username"
         value={identifier}
-        onChangeText={setIdentifier}
+        onChangeText={text => {
+          setIdentifier(text);
+          if (touched.identifier) setErrors(prev => ({ ...prev, identifier: validateIdentifier(text) }));
+        }}
+        onBlur={() => handleBlur('identifier')}
         autoCapitalize="none"
-        keyboardType="email-address"
+        autoCorrect={false}
+        keyboardType="default"
       />
+      {touched.identifier && errors.identifier ? (
+        <Text style={styles.fieldError}>{errors.identifier}</Text>
+      ) : null}
+
+      {/* ── Password ── */}
       <TextInput
-        style={styles.input}
+        style={[styles.input, touched.password && errors.password ? styles.inputError : null]}
         placeholder="Password"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={text => {
+          setPassword(text);
+          if (touched.password) setErrors(prev => ({ ...prev, password: validateLoginPassword(text) }));
+        }}
+        onBlur={() => handleBlur('password')}
         secureTextEntry
       />
+      {touched.password && errors.password ? (
+        <Text style={styles.fieldError}>{errors.password}</Text>
+      ) : null}
 
       {loading ? (
         <ActivityIndicator size="large" color="#E91E8C" />
@@ -102,8 +153,10 @@ const styles = StyleSheet.create({
   container:     { flex: 1, padding: 24, justifyContent: "center", backgroundColor: "#fff" },
   title:         { fontSize: 32, fontWeight: "bold", color: "#E91E8C", textAlign: "center", marginBottom: 8 },
   subtitle:      { fontSize: 16, color: "#666", textAlign: "center", marginBottom: 24 },
-  input:         { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 12, marginBottom: 16, fontSize: 16 },
-  button:        { backgroundColor: "#E91E8C", padding: 16, borderRadius: 8, alignItems: "center", marginBottom: 16 },
+  input:         { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 12, marginBottom: 4, fontSize: 16 },
+  inputError:    { borderColor: "#E91E8C", borderWidth: 1.5 },
+  fieldError:    { color: "#E91E8C", fontSize: 12, marginBottom: 10, marginLeft: 4 },
+  button:        { backgroundColor: "#E91E8C", padding: 16, borderRadius: 8, alignItems: "center", marginBottom: 16, marginTop: 8 },
   buttonText:    { color: "#fff", fontSize: 16, fontWeight: "bold" },
   link:          { color: "#E91E8C", textAlign: "center", marginTop: 8 },
   banner:        { borderRadius: 10, padding: 12, marginBottom: 16 },

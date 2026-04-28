@@ -12,10 +12,10 @@ const api = axios.create({
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 
-export const registerUser = async (name, email, password) => {
+export const registerUser = async (username, email, password) => {
     // Sends registration data to backend
     // Returns success message or throws error
-    const response = await api.post('/auth/register', { name, email, password });
+    const response = await api.post('/auth/register', { username, email, password });
     return response.data;
 };
 
