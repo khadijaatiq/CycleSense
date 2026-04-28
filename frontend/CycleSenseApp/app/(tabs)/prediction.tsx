@@ -3,15 +3,19 @@ import {
     View, Text, TouchableOpacity,
     StyleSheet, ActivityIndicator, Alert
 } from 'react-native';
-// 1. Import Expo Router hooks
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getPrediction } from '../../services/api';
+import { session } from '../../services/session';
+
+function getPredictedDate(daysFromNow: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
 
 export default function PredictionScreen() {
-    // 2. Initialize router and params
     const router = useRouter();
-    const params = useLocalSearchParams<{ token: string }>();
-    const token = params.token || '';
+    const token = session.getToken();
 
     const [prediction, setPrediction] = useState<any>(null);
     const [loading,    setLoading]    = useState(true);
@@ -57,6 +61,9 @@ export default function PredictionScreen() {
                         <Text style={styles.cardLabel}>Next cycle in</Text>
                         <Text style={styles.days}>{prediction.predicted_days}</Text>
                         <Text style={styles.daysLabel}>days</Text>
+                        <Text style={styles.predictedDate}>
+                            📅 {getPredictedDate(prediction.predicted_days)}
+                        </Text>
                         <Text style={styles.confidence}>
                             ± {prediction.confidence_range} days confidence range
                         </Text>
@@ -100,6 +107,7 @@ const styles = StyleSheet.create({
     cardLabel:    { fontSize: 16, color: '#666', marginBottom: 8 },
     days:         { fontSize: 72, fontWeight: 'bold', color: '#E91E8C' },
     daysLabel:    { fontSize: 20, color: '#E91E8C', marginBottom: 8 },
+    predictedDate: { fontSize: 18, fontWeight: '600', color: '#C2185B', marginBottom: 8 },
     confidence:   { fontSize: 14, color: '#999' },
     infoBox:      { backgroundColor: '#F9F9F9', borderRadius: 8, padding: 16, marginBottom: 24 },
     infoText:     { fontSize: 14, color: '#555', marginBottom: 4 },
