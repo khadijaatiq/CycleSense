@@ -28,12 +28,15 @@ def register(user: UserRegister):
 
 @router.post("/login")
 def login(credentials: UserLogin):
+    # Try email first, then fall back to name match
     user = users_collection.find_one({"email": credentials.email})
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        user = users_collection.find_one({"name": credentials.email})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email/username or password")
 
     if not verify_password(credentials.password, user["hashed_password"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid email/username or password")
 
     token = create_access_token({
         "sub":   str(user["_id"]),
@@ -45,5 +48,4 @@ def login(credentials: UserLogin):
         "token_type":   "bearer",
         "name":         user["name"]
     }
-
 

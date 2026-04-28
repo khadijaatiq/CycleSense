@@ -18,3 +18,22 @@ CycleSense/
 ├── backend/     → FastAPI + MongoDB
 ├── frontend/    → React Native App
 └── ml/          → Jupyter Notebooks + Model Training
+
+# how to run - we will need 3 terminals 
+## terminal 1
+cd CycleSense/backend
+
+# Activate virtual environment
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Mac/Linux
+
+# Run the server
+uvicorn main:app --reload --port 8000
+
+## terminal 2 - in backend folder 
+ngrok http --url=freckles-hardly-galvanize.ngrok-free.dev 8000
+
+## terminal 3 
+cd CycleSense/frontend/CycleSenseApp
+
+npx expo start

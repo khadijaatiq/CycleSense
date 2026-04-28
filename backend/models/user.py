@@ -8,6 +8,6 @@ class UserRegister(BaseModel):
 
 
 class UserLogin(BaseModel):
-    email:    EmailStr
+    email:    str   # accepts email OR username/name
     password: str
 
