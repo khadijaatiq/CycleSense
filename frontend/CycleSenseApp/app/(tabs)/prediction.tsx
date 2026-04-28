@@ -23,6 +23,25 @@ function calculatePredictedDate(startDate: string, days: number): string {
     }
 }
 
+/** Days elapsed since last cycle start date (floor, >= 0) */
+function daysElapsed(startDate: string): number {
+    if (!startDate) return 0;
+    try {
+        const start = new Date(startDate);
+        const today = new Date();
+        const diff  = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        return Math.max(0, diff);
+    } catch {
+        return 0;
+    }
+}
+
+/** Days remaining until next period = cycle length - elapsed (min 0) */
+function daysUntilNextPeriod(startDate: string, cycleLength: number): number {
+    const elapsed = daysElapsed(startDate);
+    return Math.max(0, cycleLength - elapsed);
+}
+
 export default function PredictionScreen() {
     const router = useRouter();
     const token = session.getToken();
@@ -80,8 +99,13 @@ export default function PredictionScreen() {
             {prediction && (
                 <>
                     <View style={styles.card}>
-                        <Text style={styles.cardLabel}>Next cycle in</Text>
-                        <Text style={styles.days}>{prediction.predicted_days}</Text>
+                        {/* ── Spotlight: days until next period ── */}
+                        <Text style={styles.cardLabel}>Next period in</Text>
+                        <Text style={styles.days}>
+                            {lastCycleDate
+                                ? daysUntilNextPeriod(lastCycleDate, prediction.predicted_days)
+                                : prediction.predicted_days}
+                        </Text>
                         <Text style={styles.daysLabel}>days</Text>
                         <Text style={styles.confidence}>
                             ± {prediction.confidence_range} days confidence range
@@ -96,6 +120,14 @@ export default function PredictionScreen() {
                     </View>
 
                     <View style={styles.infoBox}>
+                        <Text style={styles.infoText}>
+                            🔄 Predicted cycle length: {prediction.predicted_days} days
+                        </Text>
+                        {lastCycleDate ? (
+                            <Text style={styles.infoText}>
+                                📅 Days since last cycle: {daysElapsed(lastCycleDate)}
+                            </Text>
+                        ) : null}
                         <Text style={styles.infoText}>
                             Cycles logged: {prediction.cycles_logged}
                         </Text>
